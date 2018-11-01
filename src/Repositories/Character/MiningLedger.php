@@ -22,6 +22,7 @@
 
 namespace Seat\Services\Repositories\Character;
 
+use Illuminate\Support\Facades\DB;
 use Seat\Eveapi\Models\Industry\CharacterMining;
 
 /**
@@ -40,14 +41,14 @@ trait MiningLedger
     public function getCharacterLedger(int $character_id, bool $get = true)
     {
 
-        $ledger = CharacterMining::select('character_minings.date', 'solar_system_id', 'character_minings.type_id')
+        $ledger = CharacterMining::select('character_minings.date', 'solar_system_id', 'character_minings.type_id', DB::raw('SUM(quantity) as quantity'))
             ->join('invTypes', 'invTypes.typeID', 'character_minings.type_id')
             ->leftJoin('historical_prices', function ($join) {
                 $join->on('historical_prices.type_id', '=', 'character_minings.type_id')
                      ->on('historical_prices.date', '=', 'character_minings.date');
             })
-            ->where('character_id', $character_id);
-
+            ->where('character_id', $character_id)
+            ->groupBy('character_minings.date', 'solar_system_id', 'character_minings.type_id');
         if (! $get)
             return $ledger;
 
